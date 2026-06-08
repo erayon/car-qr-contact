@@ -592,12 +592,7 @@
       <input type="text" id="msgInput" placeholder="e.g. You may be blocking me, please move!" maxlength="80" value="Hi! You may be blocking my car. Please contact me." />
     </div>
 
-    <div class="field-group">
-      <label>Page URL (where this file is hosted)</label>
-      <input type="url" id="baseUrl" placeholder="https://yourname.github.io/car-qr-contact.html" />
-      <p class="mask-note">The QR points here, then adds the contact info after <code>#</code>. Edit if you'll host it elsewhere.</p>
-      <div class="warn" id="fileWarn">⚠️ You're opening this from a local file. Phones can't scan a <code>file://</code> QR — host this file (GitHub Pages, Netlify…) and put that URL above before generating a QR to print.</div>
-    </div>
+    <div class="warn" id="fileWarn">⚠️ You're viewing this from a local file, so the QR can't be scanned by phones. Host this file (GitHub Pages, Netlify…) and open it from that URL before generating a QR to print.</div>
 
     <button class="btn-generate" onclick="generate()">⚡ Generate My QR Code</button>
   </div>
@@ -749,9 +744,6 @@
     phoneInput.addEventListener('input', updateMask);
     document.getElementById('countryCode').addEventListener('change', updateMask);
 
-    // Prefill the hosting URL with where this file currently lives
-    const base = location.origin + location.pathname;
-    document.getElementById('baseUrl').value = base;
     if (location.protocol === 'file:') {
       document.getElementById('fileWarn').style.display = 'block';
     }
@@ -797,10 +789,8 @@
     const waNumber = fullPhone.replace(/\D/g, '');
     const masked = maskNumber(num, code);
 
-    // Build the contact URL: <hosted page>#<encoded data>
-    let base = document.getElementById('baseUrl').value.trim();
-    if (!base) base = location.origin + location.pathname;
-    base = base.split('#')[0];
+    // Build the contact URL: this hosted page + #<encoded data>
+    const base = (location.origin + location.pathname).split('#')[0];
     const payload = encodePayload({ c: code, n: num, p: plate, m: msg });
     const contactURL = base + '#' + payload;
 
