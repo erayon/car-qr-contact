@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Car QR Contact Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0d0d0f;
+    --surface: #18181c;
+    --border: #2a2a32;
+    --accent: #f5c518;
+    --accent2: #ff6b35;
+    --text: #f0f0f0;
+    --muted: #888;
+    --radius: 14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 16px 60px;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  .header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2.4rem, 6vw, 4rem);
+    letter-spacing: 0.05em;
+    line-height: 1;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .header p {
+    color: var(--muted);
+    font-size: 0.95rem;
+    margin-top: 8px;
+    font-weight: 300;
+    max-width: 340px;
+    margin-inline: auto;
+    line-height: 1.5;
+  }
+
+  .car-icon {
+    font-size: 2.4rem;
+    margin-bottom: 12px;
+    display: block;
+    filter: drop-shadow(0 0 12px rgba(245,197,24,0.4));
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    width: 100%;
+    max-width: 440px;
+    margin-bottom: 24px;
+  }
+
+  .card label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .input-row select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 12px 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    min-width: 90px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .input-row select:focus { border-color: var(--accent); }
+
+  input[type="tel"], input[type="text"], input[type="url"] {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(245,197,24,0.12);
+  }
+
+  .masked-preview {
+    background: var(--bg);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+    margin-top: 6px;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+  }
+
+  .mask-note {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  .field-group {
+    margin-bottom: 20px;
+  }
+
+  .warn {
+    background: rgba(255,107,53,0.12);
+    border: 1px solid rgba(255,107,53,0.4);
+    color: #ffb38a;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    margin-bottom: 16px;
+    display: none;
+  }
+
+  .btn-generate {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #000;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.3rem;
+    letter-spacing: 0.08em;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+    margin-top: 8px;
+  }
+
+  .btn-generate:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-generate:active { transform: translateY(0); }
+
+  /* Result Section */
+  #result {
+    display: none;
+    width: 100%;
+    max-width: 440px;
+    animation: fadeUp 0.4s ease;
+  }
+
+  @keyframes fadeUp {
+    from { opacity:0; transform: translateY(20px); }
+    to { opacity:1; transform: translateY(0); }
+  }
+
+  .qr-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  .qr-card h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.4rem;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+
+  .qr-card p {
+    color: var(--muted);
+    font-size: 0.82rem;
+    margin-bottom: 20px;
+  }
+
+  #qrcode {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+
+  #qrcode canvas, #qrcode img {
+    border-radius: 10px;
+    border: 4px solid var(--accent);
+    padding: 8px;
+    background: #fff;
+  }
+
+  .qr-link {
+    font-size: 0.72rem;
+    color: var(--muted);
+    word-break: break-all;
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+
+  .btn-download {
+    display: inline-block;
+    padding: 11px 28px;
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    text-decoration: none;
+    margin: 4px;
+  }
+
+  .btn-download:hover {
+    background: var(--accent);
+    color: #000;
+  }
+
+  /* The contact page preview */
+  .contact-preview {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+
+  .contact-preview h4 {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  .mini-contact {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    color: #111;
+    text-align: center;
+  }
+
+  .mini-contact .car-label {
+    font-size: 0.7rem;
+    color: #666;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+  }
+
+  .mini-contact .plate {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem;
+    letter-spacing: 0.1em;
+    color: #111;
+    margin-bottom: 12px;
+  }
+
+  .mini-contact .msg {
+    font-size: 0.85rem;
+    color: #444;
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+
+  .mini-contact .masked-num {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+    letter-spacing: 0.05em;
+    margin-bottom: 16px;
+  }
+
+  .mini-contact .call-btn {
+    display: block;
+    background: #222;
+    color: #fff;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-decoration: none;
+    transition: background 0.2s;
+  }
+
+  .instructions {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+  }
+
+  .instructions h4 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+
+  .step {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    align-items: flex-start;
+  }
+
+  .step-num {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #000;
+    font-weight: 700;
+    font-size: 0.75rem;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .step p {
+    font-size: 0.88rem;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .step p strong { color: var(--text); }
+
+  /* ---- Standalone contact page (shown when URL has #data) ---- */
+  #contactView {
+    display: none;
+    width: 100%;
+    max-width: 360px;
+    margin: auto;
+  }
+
+  .contact-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 36px 28px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+    color: #111;
+  }
+
+  .contact-card .c-icon { font-size: 3rem; margin-bottom: 12px; }
+  .contact-card .c-label {
+    font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.12em; color: #999; margin-bottom: 6px;
+  }
+  .contact-card .c-plate {
+    font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.06em;
+    color: #111; margin-bottom: 20px; padding: 10px 16px; background: #f9f9f9;
+    border-radius: 10px; border: 2px solid #eee;
+  }
+  .contact-card .c-msg {
+    font-size: 0.95rem; color: #444; line-height: 1.6; margin-bottom: 24px;
+    padding: 14px; background: #fffbea; border-left: 3px solid #f5c518;
+    border-radius: 0 8px 8px 0; text-align: left;
+  }
+  .contact-card .c-masked {
+    font-size: 1.05rem; color: #333; font-weight: 600;
+    letter-spacing: 0.04em; margin-bottom: 14px;
+  }
+  .contact-card .c-lock { font-size: 0.75rem; color: #aaa; margin-bottom: 20px; }
+  .contact-card a.c-callbtn {
+    display: block; background: #111; color: #fff; padding: 16px; border-radius: 12px;
+    font-size: 1.1rem; font-weight: 700; text-decoration: none; letter-spacing: 0.04em;
+    transition: background .2s;
+  }
+  .contact-card a.c-callbtn:hover { background: #333; }
+  .contact-card .c-footer { margin-top: 20px; font-size: 0.68rem; color: #ccc; }
+</style>
+</head>
+<body>
+
+<!-- ============ GENERATOR VIEW ============ -->
+<div id="appView">
+  <div class="header">
+    <span class="car-icon">🚗</span>
+    <h1>Car QR Contact</h1>
+    <p>Generate a QR sticker for your car. Scanners can reach you — without ever seeing your full number.</p>
+  </div>
+
+  <!-- Setup Form -->
+  <div class="card">
+    <div class="field-group">
+      <label>Your Phone Number</label>
+      <div class="input-row">
+        <select id="countryCode">
+          <option value="+1">🇺🇸 +1</option>
+          <option value="+44">🇬🇧 +44</option>
+          <option value="+91">🇮🇳 +91</option>
+          <option value="+61">🇦🇺 +61</option>
+          <option value="+971">🇦🇪 +971</option>
+          <option value="+49">🇩🇪 +49</option>
+          <option value="+33">🇫🇷 +33</option>
+          <option value="+81">🇯🇵 +81</option>
+          <option value="+55">🇧🇷 +55</option>
+          <option value="+52">🇲🇽 +52</option>
+        </select>
+        <input type="tel" id="phoneInput" placeholder="e.g. 5551234567" maxlength="15" />
+      </div>
+      <div style="margin-top:4px">
+        <label style="margin-bottom:4px">Masked Preview (shown on QR page)</label>
+        <div class="masked-preview" id="maskedPreview">Enter your number above…</div>
+        <p class="mask-note">🔒 Only the last 4 digits are shown to the scanner</p>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label>Car / License Plate (optional)</label>
+      <input type="text" id="plateInput" placeholder="e.g. ABC-1234 or My Blue Honda" maxlength="20" />
+    </div>
+
+    <div class="field-group">
+      <label>Message to Scanner (optional)</label>
+      <input type="text" id="msgInput" placeholder="e.g. You may be blocking me, please move!" maxlength="80" value="Hi! You may be blocking my car. Please contact me." />
+    </div>
+
+    <div class="field-group">
+      <label>Page URL (where this file is hosted)</label>
+      <input type="url" id="baseUrl" placeholder="https://yourname.github.io/car-qr-contact.html" />
+      <p class="mask-note">The QR points here, then adds the contact info after <code>#</code>. Edit if you'll host it elsewhere.</p>
+      <div class="warn" id="fileWarn">⚠️ You're opening this from a local file. Phones can't scan a <code>file://</code> QR — host this file (GitHub Pages, Netlify…) and put that URL above before generating a QR to print.</div>
+    </div>
+
+    <button class="btn-generate" onclick="generate()">⚡ Generate My QR Code</button>
+  </div>
+
+  <!-- Result -->
+  <div id="result">
+    <div class="qr-card">
+      <h3>Your QR Code is Ready</h3>
+      <p>Print or save this and stick it on your windshield</p>
+      <div id="qrcode"></div>
+      <div class="qr-link" id="qrLink"></div>
+      <button class="btn-download" onclick="downloadQR()">⬇ Download PNG</button>
+      <a class="btn-download" id="openLink" target="_blank" rel="noopener">↗ Test Page</a>
+    </div>
+
+    <div class="contact-preview">
+      <h4>📱 What scanners will see</h4>
+      <div class="mini-contact">
+        <div class="car-label">Car Owner Contact</div>
+        <div class="plate" id="previewPlate"></div>
+        <div class="msg" id="previewMsg"></div>
+        <div class="masked-num" id="previewMasked"></div>
+        <a class="call-btn" id="previewCall">📞 Call Owner</a>
+      </div>
+    </div>
+
+    <div class="instructions">
+      <h4>How to Use It</h4>
+      <div class="step">
+        <div class="step-num">1</div>
+        <p><strong>Download</strong> the QR code image above.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <p><strong>Print</strong> it on a laminated card or sticker — credit card size works great.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <p><strong>Place it</strong> on your dashboard or windshield where it's visible.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <p>When someone scans it, their phone opens your contact page showing a <strong>masked number</strong> and a call button — your real number stays hidden from the page but is embedded in the call link so the call connects.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CONTACT VIEW (shown when URL has #data) ============ -->
+<div id="contactView">
+  <div class="contact-card">
+    <div class="c-icon">🚗</div>
+    <div class="c-label">Car Owner Contact</div>
+    <div class="c-plate" id="cPlate"></div>
+    <div class="c-msg" id="cMsg"></div>
+    <div class="c-masked" id="cMasked"></div>
+    <div class="c-lock">🔒 Number partially hidden for privacy</div>
+    <a class="c-callbtn" id="cCall">📞 Call Owner</a>
+    <div class="c-footer">Generated with Car QR Contact</div>
+  </div>
+</div>
+
+<script>
+  /* ---------- shared helpers ---------- */
+  function maskNumber(digits, code) {
+    const clean = (digits || '').replace(/\D/g, '');
+    if (!clean) return '';
+    if (clean.length < 4) return code + ' ' + '*'.repeat(clean.length);
+    const last4 = clean.slice(-4);
+    const hidden = clean.slice(0, -4).replace(/\d/g, '*');
+    const formatted = hidden.replace(/(.{3})/g, '$1-').replace(/-$/, '');
+    return code + ' ' + formatted + '-' + last4;
+  }
+
+  function escapeHtml(s) {
+    return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // UTF-8 safe, URL-safe base64 (so emoji in the message survive)
+  function encodePayload(obj) {
+    const json = JSON.stringify(obj);
+    const b64 = btoa(unescape(encodeURIComponent(json)));
+    return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function decodePayload(str) {
+    let b64 = str.replace(/-/g, '+').replace(/_/g, '/');
+    while (b64.length % 4) b64 += '=';
+    return JSON.parse(decodeURIComponent(escape(atob(b64))));
+  }
+
+  /* ---------- router: contact view vs generator view ---------- */
+  function boot() {
+    const hash = location.hash.replace(/^#/, '');
+    if (hash) {
+      try {
+        renderContact(decodePayload(hash));
+        return;
+      } catch (e) {
+        // bad/old hash — fall through to generator
+        console.warn('Could not read contact data from URL:', e);
+      }
+    }
+    initGenerator();
+  }
+
+  function renderContact(d) {
+    // d = { c: countryCode, n: nationalDigits, p: plate, m: message }
+    const full = (d.c || '') + (d.n || '');
+    document.getElementById('appView').style.display = 'none';
+    document.getElementById('contactView').style.display = 'block';
+    document.body.style.background = '#ececed';
+    document.body.style.justifyContent = 'center';
+    document.getElementById('cPlate').textContent = d.p || 'My Car';
+    document.getElementById('cMsg').textContent = d.m || 'Hi! Please contact me regarding my car.';
+    document.getElementById('cMasked').textContent = maskNumber(d.n, d.c);
+    document.getElementById('cCall').href = 'tel:' + full;
+  }
+
+  /* ---------- generator ---------- */
+  function initGenerator() {
+    const phoneInput = document.getElementById('phoneInput');
+    phoneInput.addEventListener('input', updateMask);
+    document.getElementById('countryCode').addEventListener('change', updateMask);
+
+    // Prefill the hosting URL with where this file currently lives
+    const base = location.origin + location.pathname;
+    document.getElementById('baseUrl').value = base;
+    if (location.protocol === 'file:') {
+      document.getElementById('fileWarn').style.display = 'block';
+    }
+  }
+
+  function updateMask() {
+    const code = document.getElementById('countryCode').value;
+    const val = document.getElementById('phoneInput').value;
+    document.getElementById('maskedPreview').textContent =
+      maskNumber(val, code) || 'Enter your number above…';
+  }
+
+  function generate() {
+    const code = document.getElementById('countryCode').value;
+    const num = document.getElementById('phoneInput').value.replace(/\D/g, '');
+    const phoneInput = document.getElementById('phoneInput');
+    if (!num || num.length < 6) {
+      phoneInput.style.borderColor = '#ff4444';
+      phoneInput.focus();
+      setTimeout(() => phoneInput.style.borderColor = '', 1500);
+      return;
+    }
+
+    const plate = document.getElementById('plateInput').value.trim() || 'My Car';
+    const msg = document.getElementById('msgInput').value.trim() || 'Hi! Please contact me regarding my car.';
+    const fullPhone = code + num;
+    const masked = maskNumber(num, code);
+
+    // Build the contact URL: <hosted page>#<encoded data>
+    let base = document.getElementById('baseUrl').value.trim();
+    if (!base) base = location.origin + location.pathname;
+    base = base.split('#')[0];
+    const payload = encodePayload({ c: code, n: num, p: plate, m: msg });
+    const contactURL = base + '#' + payload;
+
+    // Update the on-page preview of the scanner experience
+    document.getElementById('previewPlate').textContent = plate;
+    document.getElementById('previewMsg').textContent = msg;
+    document.getElementById('previewMasked').textContent = masked;
+    document.getElementById('previewCall').href = 'tel:' + fullPhone;
+
+    // Generate the QR from the URL (small + scannable by any phone)
+    const qrDiv = document.getElementById('qrcode');
+    qrDiv.innerHTML = '';
+    new QRCode(qrDiv, {
+      text: contactURL,
+      width: 220,
+      height: 220,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+
+    document.getElementById('qrLink').textContent = contactURL;
+    document.getElementById('openLink').href = contactURL;
+
+    document.getElementById('result').style.display = 'block';
+    document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function downloadQR() {
+    const canvas = document.querySelector('#qrcode canvas');
+    if (!canvas) return;
+    const size = canvas.width + 40;
+    const out = document.createElement('canvas');
+    out.width = size; out.height = size;
+    const ctx = out.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, size, size);
+    ctx.drawImage(canvas, 20, 20);
+    const a = document.createElement('a');
+    a.href = out.toDataURL('image/png');
+    a.download = 'car-qr-contact.png';
+    a.click();
+  }
+
+  boot();
+</script>
+</body>
+</html>
