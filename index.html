@@ -568,7 +568,7 @@
           <option value="+55">🇧🇷 +55</option>
           <option value="+52">🇲🇽 +52</option>
         </select>
-        <input type="tel" id="phoneInput" placeholder="e.g. 5551234567" maxlength="15" />
+        <input type="tel" id="phoneInput" placeholder="e.g. 5551234567" maxlength="15" inputmode="numeric" autocomplete="off" />
       </div>
       <div style="margin-top:4px">
         <label style="margin-bottom:4px">Masked Preview (shown on QR page)</label>
@@ -748,10 +748,13 @@
   }
 
   function updateMask() {
+    const phoneInput = document.getElementById('phoneInput');
+    // Allow digits only — strip anything else as the user types or pastes
+    const digits = phoneInput.value.replace(/\D/g, '');
+    if (phoneInput.value !== digits) phoneInput.value = digits;
     const code = document.getElementById('countryCode').value;
-    const val = document.getElementById('phoneInput').value;
     document.getElementById('maskedPreview').textContent =
-      maskNumber(val, code) || 'Enter your number above…';
+      maskNumber(digits, code) || 'Enter your number above…';
   }
 
   function generate() {
