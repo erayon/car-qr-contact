@@ -372,6 +372,34 @@
 
   .step p strong { color: var(--text); }
 
+  /* Privacy notice + footer */
+  .notice {
+    background: rgba(245,197,24,0.07);
+    border: 1px solid rgba(245,197,24,0.3);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    max-width: 440px;
+    width: 100%;
+    font-size: 0.8rem;
+    line-height: 1.55;
+    color: #cfcfcf;
+    margin-bottom: 24px;
+  }
+  .notice strong { color: var(--accent); }
+  .notice a { color: var(--accent); }
+
+  .page-footer {
+    max-width: 440px;
+    width: 100%;
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 8px;
+    line-height: 1.8;
+  }
+  .page-footer a { color: var(--muted); text-decoration: underline; }
+  .page-footer a:hover { color: var(--accent); }
+
   /* ---- Standalone contact page (shown when URL has #data) ---- */
   #contactView {
     display: none;
@@ -427,6 +455,13 @@
     <span class="car-icon">🚗</span>
     <h1>Car QR Contact</h1>
     <p>Generate a QR sticker for your car. Scanners can reach you — without ever seeing your full number.</p>
+  </div>
+
+  <!-- Privacy notice -->
+  <div class="notice">
+    <strong>🔒 Privacy note.</strong> This is a free, open-source tool with <strong>no server and no database</strong> — everything runs in your browser and nothing you type is saved or sent anywhere. Your number is encoded inside the QR/URL itself.
+    <br><br>
+    Be aware: <strong>"masked" means hidden from view, not encrypted.</strong> The full number is embedded in the QR so the call can connect — anyone who has your QR image can technically decode it. Only share your QR where you're comfortable. This page also loads a QR library and fonts from third-party CDNs (Cloudflare, Google Fonts). Full details in the <a href="https://github.com/erayon/car-qr-contact/blob/main/PRIVACY.md" target="_blank" rel="noopener">Privacy Policy</a>.
   </div>
 
   <!-- Setup Form -->
@@ -517,6 +552,12 @@
       </div>
     </div>
   </div>
+
+  <footer class="page-footer">
+    Open source under the <a href="https://github.com/erayon/car-qr-contact/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
+    · <a href="https://github.com/erayon/car-qr-contact/blob/main/PRIVACY.md" target="_blank" rel="noopener">Privacy Policy</a>
+    · <a href="https://github.com/erayon/car-qr-contact" target="_blank" rel="noopener">Source</a>
+  </footer>
 </div>
 
 <!-- ============ CONTACT VIEW (shown when URL has #data) ============ -->
