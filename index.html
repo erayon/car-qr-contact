@@ -562,7 +562,14 @@
   .contact-card a.c-callbtn:hover { background: #333; }
   .contact-card a.c-wabtn { background: #25d366; margin-top: 12px; }
   .contact-card a.c-wabtn:hover { background: #1eb955; }
-  .contact-card .c-footer { margin-top: 20px; font-size: 0.68rem; color: #ccc; }
+  .contact-card a.c-make {
+    display: inline-block; margin-top: 22px; font-size: 0.8rem; font-weight: 600;
+    color: #c87f12; text-decoration: none; border: 1px solid #f0d27a;
+    background: #fffdf5; padding: 9px 18px; border-radius: 999px;
+    transition: background .2s;
+  }
+  .contact-card a.c-make:hover { background: #fff5d8; }
+  .contact-card .c-footer { margin-top: 14px; font-size: 0.68rem; color: #ccc; }
 </style>
 </head>
 <body>
@@ -707,7 +714,8 @@
     <div class="c-lock">🔒 Number partially hidden for privacy</div>
     <a class="c-callbtn" id="cCall">📞 Call Owner</a>
     <a class="c-callbtn c-wabtn" id="cWa">💬 WhatsApp</a>
-    <div class="c-footer">Generated with Car QR Contact</div>
+    <a class="c-make" id="cMake" target="_blank" rel="noopener">✨ Create your own — free, no signup</a>
+    <div class="c-footer">Powered by Car QR Contact</div>
   </div>
 </div>
 
@@ -768,6 +776,8 @@
     document.getElementById('cMasked').textContent = maskNumber(d.n, d.c);
     document.getElementById('cCall').href = 'tel:' + full;
     document.getElementById('cWa').href = 'https://wa.me/' + waNumber + '?text=' + encodeURIComponent(msg);
+    // Growth funnel: link back to the generator (this same page, minus the data hash)
+    document.getElementById('cMake').href = (location.origin + location.pathname).split('#')[0];
   }
 
   /* ---------- generator ---------- */
