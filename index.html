@@ -73,7 +73,7 @@
 }
 </script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap');
 
@@ -285,17 +285,18 @@
     margin-bottom: 20px;
   }
 
-  #qrcode {
+  #cardWrap {
     display: flex;
     justify-content: center;
     margin-bottom: 20px;
   }
 
-  #qrcode canvas, #qrcode img {
-    border-radius: 10px;
-    border: 4px solid var(--accent);
-    padding: 8px;
-    background: #fff;
+  #cardCanvas {
+    width: 100%;
+    max-width: 320px;
+    height: auto;
+    border-radius: 16px;
+    box-shadow: 0 10px 36px rgba(0,0,0,0.4);
   }
 
   .qr-link {
@@ -395,6 +396,8 @@
     text-decoration: none;
     transition: background 0.2s;
   }
+  .mini-contact .call-btn + .call-btn { margin-top: 8px; }
+  .mini-contact .wa-btn { background: #25d366; color: #fff; }
 
   .instructions {
     background: var(--surface);
@@ -531,6 +534,8 @@
     transition: background .2s;
   }
   .contact-card a.c-callbtn:hover { background: #333; }
+  .contact-card a.c-wabtn { background: #25d366; margin-top: 12px; }
+  .contact-card a.c-wabtn:hover { background: #1eb955; }
   .contact-card .c-footer { margin-top: 20px; font-size: 0.68rem; color: #ccc; }
 </style>
 </head>
@@ -548,7 +553,7 @@
   <div class="notice">
     <strong>🔒 Privacy note.</strong> This is a free, open-source tool with <strong>no server and no database</strong> — everything runs in your browser and nothing you type is saved or sent anywhere. Your number is encoded inside the QR/URL itself.
     <br><br>
-    Be aware: <strong>"masked" means hidden from view, not encrypted.</strong> The full number is embedded in the QR so the call can connect — anyone who has your QR image can technically decode it. Only share your QR where you're comfortable. This page also loads a QR library and fonts from third-party CDNs (Cloudflare, Google Fonts). Full details in the <a href="https://github.com/erayon/car-qr-contact/blob/main/PRIVACY.md" target="_blank" rel="noopener">Privacy Policy</a>.
+    Be aware: <strong>"masked" means hidden from view, not encrypted.</strong> The full number is embedded in the QR so the call can connect — anyone who has your QR image can technically decode it. Only share your QR where you're comfortable. This page also loads a QR library and fonts from third-party CDNs (unpkg, Google Fonts). Full details in the <a href="https://github.com/erayon/car-qr-contact/blob/main/PRIVACY.md" target="_blank" rel="noopener">Privacy Policy</a>.
   </div>
 
   <!-- Setup Form -->
@@ -600,11 +605,11 @@
   <!-- Result -->
   <div id="result">
     <div class="qr-card">
-      <h3>Your QR Code is Ready</h3>
-      <p>Print or save this and stick it on your windshield</p>
-      <div id="qrcode"></div>
+      <h3>Your Car Sticker is Ready</h3>
+      <p>Download, print, laminate, and place it on your dashboard or windshield</p>
+      <div id="cardWrap"><canvas id="cardCanvas"></canvas></div>
       <div class="qr-link" id="qrLink"></div>
-      <button class="btn-download" onclick="downloadQR()">⬇ Download PNG</button>
+      <button class="btn-download" onclick="downloadCard()">⬇ Download Sticker (PNG)</button>
       <a class="btn-download" id="openLink" target="_blank" rel="noopener">↗ Test Page</a>
     </div>
 
@@ -616,6 +621,7 @@
         <div class="msg" id="previewMsg"></div>
         <div class="masked-num" id="previewMasked"></div>
         <a class="call-btn" id="previewCall">📞 Call Owner</a>
+        <a class="call-btn wa-btn" id="previewWa">💬 WhatsApp</a>
       </div>
     </div>
 
@@ -623,7 +629,7 @@
       <h4>How to Use It</h4>
       <div class="step">
         <div class="step-num">1</div>
-        <p><strong>Download</strong> the QR code image above.</p>
+        <p><strong>Download</strong> the sticker above.</p>
       </div>
       <div class="step">
         <div class="step-num">2</div>
@@ -635,7 +641,7 @@
       </div>
       <div class="step">
         <div class="step-num">4</div>
-        <p>When someone scans it, their phone opens your contact page showing a <strong>masked number</strong> and a call button — your real number stays hidden from the page but is embedded in the call link so the call connects.</p>
+        <p>When someone scans it, their phone opens your contact page showing a <strong>masked number</strong> with <strong>Call</strong> and <strong>WhatsApp</strong> buttons — your real number stays hidden from the page but is embedded in the links so they connect.</p>
       </div>
     </div>
   </div>
@@ -673,6 +679,7 @@
     <div class="c-masked" id="cMasked"></div>
     <div class="c-lock">🔒 Number partially hidden for privacy</div>
     <a class="c-callbtn" id="cCall">📞 Call Owner</a>
+    <a class="c-callbtn c-wabtn" id="cWa">💬 WhatsApp</a>
     <div class="c-footer">Generated with Car QR Contact</div>
   </div>
 </div>
@@ -723,14 +730,17 @@
   function renderContact(d) {
     // d = { c: countryCode, n: nationalDigits, p: plate, m: message }
     const full = (d.c || '') + (d.n || '');
+    const waNumber = full.replace(/\D/g, '');
+    const msg = d.m || 'Hi! Please contact me regarding my car.';
     document.getElementById('appView').style.display = 'none';
     document.getElementById('contactView').style.display = 'block';
     document.body.style.background = '#ececed';
     document.body.style.justifyContent = 'center';
     document.getElementById('cPlate').textContent = d.p || 'My Car';
-    document.getElementById('cMsg').textContent = d.m || 'Hi! Please contact me regarding my car.';
+    document.getElementById('cMsg').textContent = msg;
     document.getElementById('cMasked').textContent = maskNumber(d.n, d.c);
     document.getElementById('cCall').href = 'tel:' + full;
+    document.getElementById('cWa').href = 'https://wa.me/' + waNumber + '?text=' + encodeURIComponent(msg);
   }
 
   /* ---------- generator ---------- */
@@ -757,7 +767,20 @@
       maskNumber(digits, code) || 'Enter your number above…';
   }
 
-  function generate() {
+  // Brand car logo for the QR center (white rounded tile + dark car w/ accent cabin)
+  const CAR_LOGO = 'data:image/svg+xml,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">' +
+    '<rect width="120" height="120" rx="26" fill="#ffffff"/>' +
+    '<path d="M32 68 L40 49 a10 10 0 0 1 9 -6 h22 a10 10 0 0 1 9 6 L88 68 Z" fill="#f5c518"/>' +
+    '<rect x="22" y="64" width="76" height="22" rx="9" fill="#0d0d0f"/>' +
+    '<circle cx="43" cy="88" r="9" fill="#0d0d0f"/>' +
+    '<circle cx="77" cy="88" r="9" fill="#0d0d0f"/>' +
+    '<circle cx="43" cy="88" r="3.5" fill="#ffffff"/>' +
+    '<circle cx="77" cy="88" r="3.5" fill="#ffffff"/>' +
+    '</svg>'
+  );
+
+  async function generate() {
     const code = document.getElementById('countryCode').value;
     const num = document.getElementById('phoneInput').value.replace(/\D/g, '');
     const phoneInput = document.getElementById('phoneInput');
@@ -771,6 +794,7 @@
     const plate = document.getElementById('plateInput').value.trim() || 'My Car';
     const msg = document.getElementById('msgInput').value.trim() || 'Hi! Please contact me regarding my car.';
     const fullPhone = code + num;
+    const waNumber = fullPhone.replace(/\D/g, '');
     const masked = maskNumber(num, code);
 
     // Build the contact URL: <hosted page>#<encoded data>
@@ -785,39 +809,196 @@
     document.getElementById('previewMsg').textContent = msg;
     document.getElementById('previewMasked').textContent = masked;
     document.getElementById('previewCall').href = 'tel:' + fullPhone;
-
-    // Generate the QR from the URL (small + scannable by any phone)
-    const qrDiv = document.getElementById('qrcode');
-    qrDiv.innerHTML = '';
-    new QRCode(qrDiv, {
-      text: contactURL,
-      width: 220,
-      height: 220,
-      colorDark: '#000000',
-      colorLight: '#ffffff',
-      correctLevel: QRCode.CorrectLevel.M
-    });
+    document.getElementById('previewWa').href = 'https://wa.me/' + waNumber + '?text=' + encodeURIComponent(msg);
 
     document.getElementById('qrLink').textContent = contactURL;
     document.getElementById('openLink').href = contactURL;
 
-    document.getElementById('result').style.display = 'block';
-    document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const btn = document.querySelector('.btn-generate');
+    const prevLabel = btn.textContent;
+    btn.textContent = 'Generating…';
+    try {
+      // QR: dark square modules + a center car logo, error-correction H so the
+      // logo doesn't break scanning. Square modules + a 22% logo + a 16px quiet
+      // zone were verified to decode reliably; the brand styling lives in the
+      // card frame so we never trade away scannability for looks.
+      const qr = new QRCodeStyling({
+        width: 600, height: 600, type: 'canvas', data: contactURL, margin: 16,
+        qrOptions: { errorCorrectionLevel: 'H' },
+        dotsOptions: { type: 'square', color: '#0d0d0f' },
+        cornersSquareOptions: { type: 'square', color: '#0d0d0f' },
+        cornersDotOptions: { type: 'square', color: '#0d0d0f' },
+        backgroundOptions: { color: '#ffffff' },
+        image: CAR_LOGO,
+        imageOptions: { margin: 6, imageSize: 0.22, hideBackgroundDots: true }
+      });
+      const blob = await qr.getRawData('png');
+      const qrImg = await blobToImage(blob);
+      drawCard(qrImg, { plate, msg, masked });
+
+      document.getElementById('result').style.display = 'block';
+      document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (e) {
+      console.error('QR/card generation failed:', e);
+      alert('Sorry, something went wrong generating the sticker. Please try again.');
+    } finally {
+      btn.textContent = prevLabel;
+    }
   }
 
-  function downloadQR() {
-    const canvas = document.querySelector('#qrcode canvas');
-    if (!canvas) return;
-    const size = canvas.width + 40;
-    const out = document.createElement('canvas');
-    out.width = size; out.height = size;
-    const ctx = out.getContext('2d');
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, size, size);
-    ctx.drawImage(canvas, 20, 20);
+  function blobToImage(blob) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => { resolve(img); };
+      img.onerror = reject;
+      img.src = url;
+    });
+  }
+
+  // Rounded-rectangle path (per-corner radii)
+  function rr(ctx, x, y, w, h, r) {
+    if (typeof r === 'number') r = { tl: r, tr: r, br: r, bl: r };
+    ctx.beginPath();
+    ctx.moveTo(x + r.tl, y);
+    ctx.lineTo(x + w - r.tr, y); ctx.arcTo(x + w, y, x + w, y + r.tr, r.tr);
+    ctx.lineTo(x + w, y + h - r.br); ctx.arcTo(x + w, y + h, x + w - r.br, y + h, r.br);
+    ctx.lineTo(x + r.bl, y + h); ctx.arcTo(x, y + h, x, y + h - r.bl, r.bl);
+    ctx.lineTo(x, y + r.tl); ctx.arcTo(x, y, x + r.tl, y, r.tl);
+    ctx.closePath();
+  }
+
+  // Word-wrap centered text; returns total height used
+  function wrapText(ctx, text, cx, y, maxW, lh, maxLines) {
+    const words = (text || '').split(/\s+/);
+    let line = '', lines = [];
+    for (const w of words) {
+      const t = line ? line + ' ' + w : w;
+      if (ctx.measureText(t).width > maxW && line) { lines.push(line); line = w; }
+      else line = t;
+    }
+    if (line) lines.push(line);
+    if (maxLines && lines.length > maxLines) {
+      lines = lines.slice(0, maxLines);
+      lines[maxLines - 1] = lines[maxLines - 1].replace(/[.,;]?\s*$/, '') + '…';
+    }
+    lines.forEach((l, i) => ctx.fillText(l, cx, y + i * lh));
+    return lines.length * lh;
+  }
+
+  // Draw a centered, auto-sized pill (emoji + label) starting at left x; returns width
+  function pill(ctx, x, y, h, label, bg, fg) {
+    ctx.font = '700 22px "DM Sans", Arial, sans-serif';
+    const padX = 22;
+    const w = ctx.measureText(label).width + padX * 2;
+    rr(ctx, x, y, w, h, h / 2); ctx.fillStyle = bg; ctx.fill();
+    ctx.fillStyle = fg; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(label, x + w / 2, y + h / 2 + 1);
+    return w;
+  }
+
+  // Render the full branded sticker card onto #cardCanvas
+  function drawCard(qrImg, info) {
+    const W = 680, H = 1040, s = 2;
+    const cv = document.getElementById('cardCanvas');
+    cv.width = W * s; cv.height = H * s;
+    const ctx = cv.getContext('2d');
+    ctx.save();
+    ctx.scale(s, s);
+    ctx.clearRect(0, 0, W, H);
+
+    // Card background
+    rr(ctx, 0, 0, W, H, 40); ctx.fillStyle = '#ffffff'; ctx.fill();
+
+    // Header band (top corners rounded only)
+    const hbH = 132;
+    rr(ctx, 0, 0, W, hbH, { tl: 40, tr: 40, br: 0, bl: 0 });
+    const hg = ctx.createLinearGradient(0, 0, W, 0);
+    hg.addColorStop(0, '#f5c518'); hg.addColorStop(1, '#ff6b35');
+    ctx.fillStyle = hg; ctx.fill();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#0d0d0f';
+    ctx.font = '40px "Segoe UI Emoji", sans-serif';
+    ctx.fillText('🚗', W / 2, 52);
+    ctx.font = '800 30px "DM Sans", Arial, sans-serif';
+    ctx.fillText('CAR QR CONTACT', W / 2, 98);
+
+    // Hook
+    ctx.fillStyle = '#0d0d0f';
+    ctx.font = '800 26px "DM Sans", Arial, sans-serif';
+    ctx.fillText('Need to reach the owner?', W / 2, hbH + 48);
+    ctx.fillStyle = '#777';
+    ctx.font = '400 17px "DM Sans", Arial, sans-serif';
+    ctx.fillText('Scan the code with your phone camera', W / 2, hbH + 78);
+
+    // QR panel
+    const qrSize = 300, qx = (W - qrSize) / 2, qy = hbH + 110;
+    rr(ctx, qx - 18, qy - 18, qrSize + 36, qrSize + 36, 24);
+    ctx.fillStyle = '#fafafa'; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = '#ececec';
+    rr(ctx, qx - 18, qy - 18, qrSize + 36, qrSize + 36, 24); ctx.stroke();
+    ctx.drawImage(qrImg, qx, qy, qrSize, qrSize);
+
+    let y = qy + qrSize + 46;
+
+    // Contact pills row: Call + WhatsApp
+    const ph = 46, gap = 14;
+    ctx.font = '700 22px "DM Sans", Arial, sans-serif';
+    const w1 = ctx.measureText('📞 Call').width + 44;
+    const w2 = ctx.measureText('💬 WhatsApp').width + 44;
+    let px = (W - (w1 + w2 + gap)) / 2;
+    px += pill(ctx, px, y, ph, '📞 Call', '#0d0d0f', '#ffffff') + gap;
+    pill(ctx, px, y, ph, '💬 WhatsApp', '#25d366', '#ffffff');
+    y += ph + 34;
+
+    // Plate chip
+    ctx.font = '800 30px "DM Sans", Arial, sans-serif';
+    const plateText = (info.plate || 'My Car').toUpperCase();
+    const chipW = Math.min(W - 80, ctx.measureText(plateText).width + 56);
+    rr(ctx, (W - chipW) / 2, y, chipW, 52, 12);
+    ctx.fillStyle = '#f5f5f5'; ctx.fill();
+    ctx.strokeStyle = '#e6e6e6'; ctx.lineWidth = 2;
+    rr(ctx, (W - chipW) / 2, y, chipW, 52, 12); ctx.stroke();
+    ctx.fillStyle = '#111'; ctx.textBaseline = 'middle';
+    ctx.fillText(plateText, W / 2, y + 28);
+    y += 52 + 22;
+
+    // Masked number
+    ctx.fillStyle = '#444';
+    ctx.font = '600 19px "DM Sans", Arial, sans-serif';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText('📞 ' + info.masked, W / 2, y);
+    y += 30;
+
+    // Message
+    ctx.fillStyle = '#666';
+    ctx.font = 'italic 400 17px "DM Sans", Arial, sans-serif';
+    y += wrapText(ctx, '“' + info.msg + '”', W / 2, y, W - 110, 24, 2);
+
+    // Footer instruction
+    ctx.fillStyle = '#aaa';
+    ctx.font = '400 14px "DM Sans", Arial, sans-serif';
+    ctx.fillText('Scan with your phone camera or any QR app', W / 2, H - 56);
+    ctx.fillStyle = '#c9c9c9';
+    ctx.font = '700 13px "DM Sans", Arial, sans-serif';
+    ctx.fillText('car-qr-contact', W / 2, H - 34);
+
+    // Brand border on top of everything
+    ctx.lineWidth = 6;
+    const bg = ctx.createLinearGradient(0, 0, W, H);
+    bg.addColorStop(0, '#f5c518'); bg.addColorStop(1, '#ff6b35');
+    ctx.strokeStyle = bg;
+    rr(ctx, 3, 3, W - 6, H - 6, 38); ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function downloadCard() {
+    const cv = document.getElementById('cardCanvas');
+    if (!cv || !cv.width) return;
     const a = document.createElement('a');
-    a.href = out.toDataURL('image/png');
-    a.download = 'car-qr-contact.png';
+    a.href = cv.toDataURL('image/png');
+    a.download = 'car-qr-contact-sticker.png';
     a.click();
   }
 
