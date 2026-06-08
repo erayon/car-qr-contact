@@ -299,6 +299,32 @@
     box-shadow: 0 10px 36px rgba(0,0,0,0.4);
   }
 
+  .gallery {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 18px;
+  }
+  .tpl {
+    background: transparent;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 6px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    transition: border-color .15s, transform .1s;
+  }
+  .tpl:hover { transform: translateY(-2px); }
+  .tpl.selected { border-color: var(--accent); }
+  .tpl canvas { width: 150px; height: auto; border-radius: 6px; display: block; }
+  .tpl span { font-size: 0.72rem; color: var(--muted); font-weight: 600; letter-spacing: .04em; }
+  .tpl.selected span { color: var(--accent); }
+
   .qr-link {
     font-size: 0.72rem;
     color: var(--muted);
@@ -601,7 +627,13 @@
   <div id="result">
     <div class="qr-card">
       <h3>Your Car Sticker is Ready</h3>
-      <p>Download, print, laminate, and place it on your dashboard or windshield</p>
+      <p>Pick a style, then download — print, laminate, and place it in your car</p>
+      <div class="gallery" id="gallery">
+        <button type="button" class="tpl" data-id="classic"><canvas></canvas><span>Classic</span></button>
+        <button type="button" class="tpl" data-id="midnight"><canvas></canvas><span>Midnight</span></button>
+        <button type="button" class="tpl" data-id="white"><canvas></canvas><span>Clean White</span></button>
+        <button type="button" class="tpl" data-id="emergency"><canvas></canvas><span>Emergency</span></button>
+      </div>
       <div id="cardWrap"><canvas id="cardCanvas"></canvas></div>
       <div class="qr-link" id="qrLink"></div>
       <button class="btn-download" onclick="downloadCard()">⬇ Download Sticker (PNG)</button>
@@ -743,6 +775,7 @@
     const phoneInput = document.getElementById('phoneInput');
     phoneInput.addEventListener('input', updateMask);
     document.getElementById('countryCode').addEventListener('change', updateMask);
+    setupGallery();
 
     if (location.protocol === 'file:') {
       document.getElementById('fileWarn').style.display = 'block';
@@ -771,6 +804,32 @@
     '<circle cx="77" cy="88" r="3.5" fill="#ffffff"/>' +
     '</svg>'
   );
+
+  // Sticker style templates. The QR itself stays dark-on-white in every theme
+  // (verified scannable); themes only restyle the frame around it.
+  const THEMES = {
+    classic:  { cardBg:'#ffffff', qrPanel:'#fafafa', qrPanelBorder:'#ececec',
+                kicker:'🚗 CAR QR CONTACT', kickerColor:'#ff6b35', headline:'#0d0d0f',
+                chipBg:'#f5f5f5', chipBorder:'#e6e6e6', chipText:'#111', msg:'#666',
+                scanLabel:'#999', footer:'#c9c9c9', callBg:'#0d0d0f', callFg:'#ffffff',
+                waBg:'#25d366', waFg:'#ffffff', border:['#f5c518','#ff6b35'] },
+    midnight: { cardBg:'#16161c', qrPanel:'#ffffff', qrPanelBorder:'#2a2a32',
+                kicker:'🚗 CAR QR CONTACT', kickerColor:'#f5c518', headline:'#ffffff',
+                chipBg:'#23232b', chipBorder:'#33333d', chipText:'#ffffff', msg:'#aaaaaa',
+                scanLabel:'#888', footer:'#555', callBg:'#f5c518', callFg:'#0d0d0f',
+                waBg:'#25d366', waFg:'#ffffff', border:['#f5c518','#ff8a3d'] },
+    white:    { cardBg:'#ffffff', qrPanel:'#ffffff', qrPanelBorder:'#eeeeee',
+                kicker:'🚗 CAR QR CONTACT', kickerColor:'#999999', headline:'#111111',
+                chipBg:'#fafafa', chipBorder:'#ececec', chipText:'#111', msg:'#888888',
+                scanLabel:'#bbbbbb', footer:'#cccccc', callBg:'#111111', callFg:'#ffffff',
+                waBg:'#25d366', waFg:'#ffffff', border:'#e8e8e8' },
+    emergency:{ cardBg:'#ffffff', qrPanel:'#fafafa', qrPanelBorder:'#f0dada',
+                kicker:'⚠ IN CASE OF EMERGENCY', kickerColor:'#e11d2a', headline:'#0d0d0f',
+                chipBg:'#fff5f5', chipBorder:'#f3c6c9', chipText:'#111', msg:'#666',
+                scanLabel:'#bbbbbb', footer:'#dddddd', callBg:'#e11d2a', callFg:'#ffffff',
+                waBg:'#25d366', waFg:'#ffffff', border:['#ff4d4d','#e11d2a'] }
+  };
+  let CURRENT = { qrImg: null, info: null, id: 'classic' };
 
   async function generate() {
     const code = document.getElementById('countryCode').value;
@@ -824,7 +883,10 @@
       });
       const blob = await qr.getRawData('png');
       const qrImg = await blobToImage(blob);
-      drawCard(qrImg, { plate, msg, masked });
+      CURRENT.qrImg = qrImg;
+      CURRENT.info = { plate, msg };
+      renderGallery();
+      selectTemplate(CURRENT.id || 'classic');
 
       document.getElementById('result').style.display = 'block';
       document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -858,24 +920,6 @@
     ctx.closePath();
   }
 
-  // Word-wrap centered text; returns total height used
-  function wrapText(ctx, text, cx, y, maxW, lh, maxLines) {
-    const words = (text || '').split(/\s+/);
-    let line = '', lines = [];
-    for (const w of words) {
-      const t = line ? line + ' ' + w : w;
-      if (ctx.measureText(t).width > maxW && line) { lines.push(line); line = w; }
-      else line = t;
-    }
-    if (line) lines.push(line);
-    if (maxLines && lines.length > maxLines) {
-      lines = lines.slice(0, maxLines);
-      lines[maxLines - 1] = lines[maxLines - 1].replace(/[.,;]?\s*$/, '') + '…';
-    }
-    lines.forEach((l, i) => ctx.fillText(l, cx, y + i * lh));
-    return lines.length * lh;
-  }
-
   // Draw a centered, auto-sized pill (emoji + label) starting at left x; returns width
   function pill(ctx, x, y, h, label, bg, fg) {
     ctx.font = '700 22px "DM Sans", Arial, sans-serif';
@@ -906,26 +950,27 @@
     return lines.length * lh;
   }
 
-  // Render a compact, credit-card-ratio sticker onto #cardCanvas (QR left, info right)
-  function drawCard(qrImg, info) {
-    const W = 952, H = 600, s = 2;             // ~1.586:1 (standard card ratio)
-    const cv = document.getElementById('cardCanvas');
-    cv.width = W * s; cv.height = H * s;
-    const ctx = cv.getContext('2d');
+  // Render a compact, credit-card-ratio sticker onto the given canvas (QR left,
+  // info right), themed by `t`. `scale` sets the backing resolution (2 = print,
+  // 1 = gallery thumbnail).
+  function drawCard(canvas, qrImg, info, t, scale) {
+    const W = 952, H = 600, s = scale || 2;    // ~1.586:1 (standard card ratio)
+    canvas.width = W * s; canvas.height = H * s;
+    const ctx = canvas.getContext('2d');
     ctx.save();
     ctx.scale(s, s);
     ctx.clearRect(0, 0, W, H);
 
     // Card background
-    rr(ctx, 0, 0, W, H, 32); ctx.fillStyle = '#ffffff'; ctx.fill();
+    rr(ctx, 0, 0, W, H, 32); ctx.fillStyle = t.cardBg; ctx.fill();
 
-    // QR panel (left)
+    // QR panel (left) — always a light tile so the dark QR keeps contrast
     const qz = 360, qx = 44, qy = (H - qz) / 2 - 12;
-    rr(ctx, qx - 14, qy - 14, qz + 28, qz + 28, 20); ctx.fillStyle = '#fafafa'; ctx.fill();
-    ctx.lineWidth = 2; ctx.strokeStyle = '#ececec';
+    rr(ctx, qx - 14, qy - 14, qz + 28, qz + 28, 20); ctx.fillStyle = t.qrPanel; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = t.qrPanelBorder;
     rr(ctx, qx - 14, qy - 14, qz + 28, qz + 28, 20); ctx.stroke();
     ctx.drawImage(qrImg, qx, qy, qz, qz);
-    ctx.fillStyle = '#999'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = t.scanLabel; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
     ctx.font = '700 15px "DM Sans", Arial, sans-serif';
     ctx.fillText('SCAN WITH PHONE CAMERA', qx + qz / 2, qy + qz + 36);
 
@@ -933,14 +978,14 @@
     const rx = qx + qz + 52;        // left edge of text column
     const rw = W - rx - 44;         // its width
 
-    // Brand label
+    // Kicker / brand label
     ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-    ctx.fillStyle = '#ff6b35';
+    ctx.fillStyle = t.kickerColor;
     ctx.font = '800 18px "DM Sans", Arial, sans-serif';
-    ctx.fillText('🚗 CAR QR CONTACT', rx, 92);
+    ctx.fillText(t.kicker, rx, 92);
 
     // Headline
-    ctx.fillStyle = '#0d0d0f';
+    ctx.fillStyle = t.headline;
     ctx.font = '800 34px "DM Sans", Arial, sans-serif';
     let y = 132;
     y += wrapLeft(ctx, 'Scan to contact the owner', rx, y, rw, 40, 2);
@@ -950,36 +995,64 @@
     ctx.font = '800 26px "DM Sans", Arial, sans-serif';
     const plateText = (info.plate || 'My Car').toUpperCase();
     const chipW = Math.min(rw, ctx.measureText(plateText).width + 44);
-    rr(ctx, rx, y, chipW, 48, 10); ctx.fillStyle = '#f5f5f5'; ctx.fill();
-    ctx.strokeStyle = '#e6e6e6'; ctx.lineWidth = 2; rr(ctx, rx, y, chipW, 48, 10); ctx.stroke();
-    ctx.fillStyle = '#111'; ctx.textBaseline = 'middle';
+    rr(ctx, rx, y, chipW, 48, 10); ctx.fillStyle = t.chipBg; ctx.fill();
+    ctx.strokeStyle = t.chipBorder; ctx.lineWidth = 2; rr(ctx, rx, y, chipW, 48, 10); ctx.stroke();
+    ctx.fillStyle = t.chipText; ctx.textBaseline = 'middle';
     ctx.fillText(plateText, rx + 22, y + 25);
     ctx.textBaseline = 'alphabetic';
     y += 48 + 30;
 
     // Message
-    ctx.fillStyle = '#666';
+    ctx.fillStyle = t.msg;
     ctx.font = 'italic 400 17px "DM Sans", Arial, sans-serif';
     y += wrapLeft(ctx, '“' + info.msg + '”', rx, y, rw, 23, 2);
 
     // Channel pills (anchored near the bottom)
     let px = rx, py = H - 96;
-    px += pill(ctx, px, py, 44, '📞 Call', '#0d0d0f', '#ffffff') + 12;
-    pill(ctx, px, py, 44, '💬 WhatsApp', '#25d366', '#ffffff');
+    px += pill(ctx, px, py, 44, '📞 Call', t.callBg, t.callFg) + 12;
+    pill(ctx, px, py, 44, '💬 WhatsApp', t.waBg, t.waFg);
 
     // Footer brand
-    ctx.fillStyle = '#c9c9c9'; ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = t.footer; ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic';
     ctx.font = '700 13px "DM Sans", Arial, sans-serif';
     ctx.fillText('car-qr-contact', W - 44, H - 28);
 
-    // Brand border on top
+    // Border (gradient when an array, otherwise a solid color)
     ctx.lineWidth = 6;
-    const bg = ctx.createLinearGradient(0, 0, W, H);
-    bg.addColorStop(0, '#f5c518'); bg.addColorStop(1, '#ff6b35');
-    ctx.strokeStyle = bg;
+    if (Array.isArray(t.border)) {
+      const bg = ctx.createLinearGradient(0, 0, W, H);
+      bg.addColorStop(0, t.border[0]); bg.addColorStop(1, t.border[1]);
+      ctx.strokeStyle = bg;
+    } else {
+      ctx.strokeStyle = t.border;
+    }
     rr(ctx, 3, 3, W - 6, H - 6, 30); ctx.stroke();
 
     ctx.restore();
+  }
+
+  // Draw all gallery thumbnails from the current QR + info
+  function renderGallery() {
+    document.querySelectorAll('#gallery .tpl').forEach(btn => {
+      const t = THEMES[btn.dataset.id];
+      if (t && CURRENT.qrImg) drawCard(btn.querySelector('canvas'), CURRENT.qrImg, CURRENT.info, t, 1);
+    });
+  }
+
+  // Choose a template: render it big and highlight its thumbnail
+  function selectTemplate(id) {
+    if (!CURRENT.qrImg || !THEMES[id]) return;
+    CURRENT.id = id;
+    drawCard(document.getElementById('cardCanvas'), CURRENT.qrImg, CURRENT.info, THEMES[id], 2);
+    document.querySelectorAll('#gallery .tpl').forEach(b =>
+      b.classList.toggle('selected', b.dataset.id === id));
+  }
+
+  // Wire gallery clicks once (handlers are inert until a sticker is generated)
+  function setupGallery() {
+    document.querySelectorAll('#gallery .tpl').forEach(btn => {
+      btn.addEventListener('click', () => selectTemplate(btn.dataset.id));
+    });
   }
 
   function downloadCard() {
@@ -987,7 +1060,7 @@
     if (!cv || !cv.width) return;
     const a = document.createElement('a');
     a.href = cv.toDataURL('image/png');
-    a.download = 'car-qr-contact-sticker.png';
+    a.download = 'car-qr-contact-' + (CURRENT.id || 'sticker') + '.png';
     a.click();
   }
 
