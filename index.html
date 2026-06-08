@@ -3,7 +3,75 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Car QR Contact Generator</title>
+
+<!-- ===== SEO ===== -->
+<title>Car QR Contact — Free Private QR Code Generator for Your Car</title>
+<meta name="description" content="Free, no-signup tool to create a private QR code for your car. Scanners see a masked phone number and your message, then tap to call you — your full number never shows on the page. No server, nothing stored." />
+<meta name="keywords" content="car QR code, contact QR code, masked phone number, parking contact, windshield QR sticker, call owner QR, private phone QR, car emergency contact" />
+<meta name="author" content="erayon" />
+<meta name="robots" content="index, follow" />
+<link rel="canonical" href="https://erayon.github.io/car-qr-contact/" />
+<meta name="theme-color" content="#0d0d0f" />
+
+<!-- Open Graph (Facebook, LinkedIn, WhatsApp previews) -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Car QR Contact" />
+<meta property="og:title" content="Car QR Contact — Private QR Code Generator for Your Car" />
+<meta property="og:description" content="Create a QR sticker for your car. Scanners reach you via a masked number and a tap-to-call button — without ever seeing your full number. No server, nothing stored." />
+<meta property="og:url" content="https://erayon.github.io/car-qr-contact/" />
+
+<!-- Twitter card -->
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="Car QR Contact — Private QR Code Generator for Your Car" />
+<meta name="twitter:description" content="A QR sticker for your car: scanners reach you via a masked number and tap-to-call, without seeing your full number. Free, no server, nothing stored." />
+
+<!-- Structured data: the tool -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Car QR Contact",
+  "url": "https://erayon.github.io/car-qr-contact/",
+  "description": "Free tool to generate a private QR code for your car that shows a masked phone number and a tap-to-call button, with no server and nothing stored.",
+  "applicationCategory": "UtilityApplication",
+  "operatingSystem": "Any (web browser)",
+  "browserRequirements": "Requires JavaScript.",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "author": { "@type": "Person", "name": "erayon" },
+  "license": "https://github.com/erayon/car-qr-contact/blob/main/LICENSE"
+}
+</script>
+
+<!-- Structured data: FAQ (eligible for rich results) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How does a car QR contact code work?",
+      "acceptedAnswer": { "@type": "Answer", "text": "You enter your phone number, plate, and a message. The tool generates a QR code that links to a contact page. Anyone who scans it sees a masked version of your number and a Call Owner button that dials you, so your full number never appears on the page." }
+    },
+    {
+      "@type": "Question",
+      "name": "Is it free and does it need an account?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes, it is completely free with no signup, no account, and no app to install. It runs entirely in your browser." }
+    },
+    {
+      "@type": "Question",
+      "name": "Is my phone number stored on a server?",
+      "acceptedAnswer": { "@type": "Answer", "text": "No. There is no server or database. Your details are encoded inside the QR code itself and are never uploaded or stored anywhere." }
+    },
+    {
+      "@type": "Question",
+      "name": "Is the masked number truly hidden?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Masking hides the number on screen, but the full number is embedded in the QR so the call can connect, meaning someone with your QR image could technically decode it. Treat the QR like a business card and share it where you are comfortable being reached." }
+    }
+  ]
+}
+</script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap');
@@ -400,6 +468,24 @@
   .page-footer a { color: var(--muted); text-decoration: underline; }
   .page-footer a:hover { color: var(--accent); }
 
+  .about {
+    max-width: 440px;
+    width: 100%;
+    margin-bottom: 24px;
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.65;
+  }
+  .about h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    margin: 8px 0 12px;
+  }
+  .about h3 { color: var(--text); font-size: 0.95rem; margin: 18px 0 4px; }
+  .about p { margin-bottom: 10px; }
+
   /* ---- Standalone contact page (shown when URL has #data) ---- */
   #contactView {
     display: none;
@@ -552,6 +638,22 @@
       </div>
     </div>
   </div>
+
+  <section class="about">
+    <h2>About this tool</h2>
+    <p><strong>Car QR Contact</strong> is a free, open-source generator for a privacy-friendly QR code you can stick on your car. When someone needs to reach you — you're blocking them in a parking lot, your lights are on, there's a minor bump — they scan the code, see a <strong>masked phone number</strong> and your custom message, and tap <strong>Call Owner</strong> to dial you. Your full number is never displayed on the page.</p>
+    <p>There's no app, no account, and no server: everything is generated in your browser and nothing you type is stored or uploaded anywhere.</p>
+
+    <h2>Frequently asked questions</h2>
+    <h3>How does a car QR contact code work?</h3>
+    <p>You enter your phone number, plate, and a message. The tool builds a QR code linking to a contact page. Whoever scans it sees a masked version of your number plus a tap-to-call button — your real number stays off the page but is embedded in the call link so the call connects.</p>
+    <h3>Is it free? Do I need an account?</h3>
+    <p>It's completely free, with no signup, no account, and no app to install.</p>
+    <h3>Is my phone number stored on a server?</h3>
+    <p>No. There is no server or database. Your details are encoded inside the QR code itself and are never uploaded or saved.</p>
+    <h3>Is the masked number truly hidden?</h3>
+    <p>Masking hides the number on screen, but the full number is embedded in the QR so the call can connect — someone with your QR image could technically decode it. Treat your QR like a business card and share it where you're comfortable being reached. See the <a href="https://github.com/erayon/car-qr-contact/blob/main/PRIVACY.md" target="_blank" rel="noopener">Privacy Policy</a>.</p>
+  </section>
 
   <footer class="page-footer">
     Open source under the <a href="https://github.com/erayon/car-qr-contact/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
